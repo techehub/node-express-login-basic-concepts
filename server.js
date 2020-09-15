@@ -1,9 +1,14 @@
 var express = require('express')
 var bodyparser = require('body-parser')
 var cookieParser = require('cookie-parser');
+var session = require('express-session')
 
 var app = express()
 var user = { id: 111, name: "vijeesh", password: "test123" }
+
+app.use(session({
+    secret: "my secret"
+}))
 
 app.use(cookieParser());
 app.use(bodyparser.json())
@@ -18,10 +23,12 @@ app.get('/login', (req, res) => {
 
 app.post('/login', (req, res) => {
     console.log(req.body.username)
+
     if (req.body.username == user.name &&
         req.body.pwd == user.password
     ) {
         res.cookie("login_user", user.id);
+        req.session.loggedin_user = user
         res.send(" login success ")
     } else {
         res.send("login failed")
@@ -30,13 +37,14 @@ app.post('/login', (req, res) => {
 
 app.get('/logout', (req, res) => {
     res.clearCookie('login_user')
+    req.session.loggedin_user = null
     res.redirect('/')
 })
 
-function processing1(req, res, next) {
-    console.log('req.testid', req.testid)
-    if (req.cookies.login_user == null) {
-
+function logincheck(req, res, next) {
+    //console.log('req.cookies.login_user', req.cookies.login_user)
+    //console.log('req.session.loggedin_user.id', req.session.loggedin_user.id)
+    if (req.session.loggedin_user == null || (req.cookies.login_user != req.session.loggedin_user.id)) {
         res.redirect("/login")
     } else {
         next()
@@ -45,19 +53,20 @@ function processing1(req, res, next) {
 
 function processing2(req, res, next) {
     req.testid = "215317653"
-        //next()
+    next()
 }
 
 //app.use(processing2)
 //app.use(processing1)
 
-app.get('/content', processing2, processing1, (req, res) => {
+app.get('/content', processing2, logincheck, (req, res) => {
     console.log(req.cookies.login_user)
+    res.send(" this is my secure page content")
 })
 
-app.get('/test', (req, res) => {
-    console.log("test1111")
-    res.send("testing page")
+app.get('/test', logincheck, (req, res) => {
+
+    res.send(req.session.loggedin_user)
 })
 
 app.listen(3666)
