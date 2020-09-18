@@ -28,7 +28,7 @@ app.post('/login', (req, res) => {
         req.body.pwd == user.password
     ) {
         res.cookie("login_user", user.id);
-        req.session.loggedin_user = user
+        req.session.loggedin_user = user.id
         res.send(" login success ")
     } else {
         res.send("login failed")
@@ -43,7 +43,7 @@ app.get('/logout', (req, res) => {
 
 function logincheck(req, res, next) {
     //console.log('req.cookies.login_user', req.cookies.login_user)
-    //console.log('req.session.loggedin_user.id', req.session.loggedin_user.id)
+    console.log('req.session.loggedin_user.id', req.session.loggedin_user.id)
     if (req.session.loggedin_user == null || (req.cookies.login_user != req.session.loggedin_user.id)) {
         res.redirect("/login")
     } else {
@@ -65,7 +65,6 @@ app.get('/content', processing2, logincheck, (req, res) => {
 })
 
 app.get('/test', logincheck, (req, res) => {
-
     res.send(req.session.loggedin_user)
 })
 
